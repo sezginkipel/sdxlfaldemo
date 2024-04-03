@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<h1>
+    SDXL Demo
+</h1>
+
+<form action="http://localhost:3000/api/generate" method="post" id="generateImageForm">
+    <label for="userPrompt">Prompt</label>
+    <input type="text" id="userPrompt" name="userPrompt">
+    <button type="submit" id="submitButton">Generate Image</button>
+</form>
+
+<style>
+    body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: #fafafa;
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 20px;
+    }
+
+    input {
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    button {
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+    }
+
+    button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+    }
+
+    img {
+        margin-top: 20px;
+        width: 500px;
+        height: 500px;
+    }
+
+    h1 {
+        margin-top: 20px;
+    }
+
+    label {
+        margin-top: 10px;
+    }
+</style>
+
+<script>
+    const form = document.getElementById("generateImageForm");
+    const submitButton = document.getElementById("submitButton");
+    const request = new XMLHttpRequest();
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        request.open('POST', '/api/generate', true);
+        request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+
+        submitButton.disabled = true;
+        submitButton.innerText = "Generating...";
+
+        request.onload = function() {
+            let result;
+            if (this.status >= 200 && this.status < 400) {
+                result = JSON.parse(this.response);
+                if (result.status_message === ('create-image:success')) {
+                    let img = document.createElement("img");
+                    img.src = result.result.images[0].url;
+                    document.body.appendChild(img);
+                    submitButton.disabled = false;
+                    submitButton.innerText = "Generate Image";
+
+                    let a = document.createElement('a');
+                    let linkText = document.createTextNode("Download Image");
+                    a.appendChild(linkText);
+                    a.title = "Download Image";
+                    a.href = result.result.images[0].url;
+                    a.download = "image.png";
+                    document.body.appendChild(a);
+
+
+
+                    form.reset();
+                } else if (result.status_message === ('create-image:error')) {
+                    alert("Image could not be created!");
+                    form.reset();
+                }
+            } else {
+                alert("Error occurred!")
+            }
+        };
+
+        request.onerror = function() {
+            // There was a connection error of some sort
+        };
+        let userPrompt = document.getElementById("userPrompt").value;
+
+        const data = JSON.stringify({
+            userPrompt: userPrompt,
+        });
+        request.send(data);
+    });
+</script>
+
+</body>
+</html>
